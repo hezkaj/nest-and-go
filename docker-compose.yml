@@ -1,0 +1,74 @@
+version: '3.9'
+services:
+  rabbit:
+    image: rabbitmq:3-management
+    hostname: myrabbit
+    ports:
+      - 15672:15672
+      - 5672:5672
+    volumes:
+      - ./rabbitmq:/var/lib/rabbitmq
+    restart: always
+       
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      PG_DATA: /var/lib/postgresql/data
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    restart: always
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: zhanina@mail.ru
+      PGADMIN_DEFAULT_PASSWORD: root
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    ports:
+      - 8080:80
+    restart: always
+
+  main-service:
+    build: ./main-service     
+    volumes:
+      - .:/app/main-service
+      - /app/main-service/node_modules
+    ports:
+      - 5000:5000
+    command: npm run start
+    depends_on:
+      - postgres
+    restart: always
+
+  auth-service:
+    build: ./auth-service       
+    volumes:
+      - ./auth-service:/app/auth-service
+      - /app/auth-service/node_modules
+    ports:
+      - 3000:3000
+    command: npm run start
+    depends_on:
+      - postgres
+    restart: always
+
+  value-service:
+    build: ./value-service
+    volumes:
+      - ./value-service:/build/value-service
+    ports:
+      - 8000:8000
+    command: ./main
+    depends_on:
+      - postgres
+    restart: always
+
+volumes:
+  pgdata: 
+  pgadmin-data:
+
